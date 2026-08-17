@@ -1,0 +1,126 @@
+"""
+mis_tareas = []
+service.agregar_tarea(mis_tareas, "Estudiar Python")
+service.agregar_tarea(mis_tareas, "Aprender FastAPI")
+service.agregar_tarea(mis_tareas, "Crear proyecto IA")
+
+print("ANTES:")
+service.listar_tareas(mis_tareas)
+
+service.completar_tarea(mis_tareas, 2)
+
+service.eliminar_tarea(mis_tareas, 1)
+
+print("\nDESPUÉS:")
+service.listar_tareas(mis_tareas)
+
+tare = Tarea("Estudiando Python")
+print(tare)
+print(tare.nombre)
+print(tare.completada)
+
+tarea2 = Tarea("Repasar Git", False)
+tarea3 = Tarea("Estudiar nuevos temas de Linux")
+tarea4= Tarea("Ir al gym" , True)
+tarea5 = Tarea("Hacer el examen de Algoritmos", True)
+
+lista_de_tareas_ejemplo=[tare,tarea2,tarea3,tarea4,tarea5]
+
+for tareass in lista_de_tareas_ejemplo:
+    if tareass.completada:
+        print(f"{tareass}.... Completada.")
+    else:
+        print(f"{tareass} ..... Pendientes.")
+        """
+
+-----------------–-------------
+
+#Aquí la lista se crea antes, porque que pasaría si va dentro de la función agregar_tarea()?
+#Cada vez que se inicializa la función volvería a crear una nueva lista, por eso esta variable tiene que ir afuera
+#Para cada vez que se trabaje con una lista, se trabaje con la misma y no una nueva.
+
+def agregar_tarea(lista_de_tareas) -> None:
+
+    while True:
+
+        print("Si deseas salir, solo escribelo. :) ")
+        tarea = input("Crea la tarea que necesites realizar: ")
+
+        if  tarea.lower() == 'salir':
+                break
+
+        nueva_tarea={
+            "tarea": tarea,
+            "estado":False
+        }
+        
+        lista_de_tareas.append(nueva_tarea)
+    print(f"{lista_de_tareas} se guardo esto")
+    
+
+#Como no devuelve nada, se coloca None.
+def listar_tareas(lista_de_tareas) -> None:
+    
+    print(f"Lista de tareas agregadas:")
+    
+    if not lista_de_tareas:
+        print(f"No hay tareas agregadas, agregue una.")
+
+    else:
+        for indice, tarea in enumerate(lista_de_tareas, start=1):
+
+            estado = "✓" if tarea["estado"] else " "
+
+            print(f"{indice}. [{estado}] {tarea['tarea']}")
+
+def completar_tarea(lista_de_tareas) -> None:
+        print("Que tarea quieres completar? ")
+
+        if not lista_de_tareas:
+            print("No existe ninguna tarea en su lista.")
+            return
+        
+        
+        listar_tareas(lista_de_tareas)
+        
+
+        print("Que tarea quieres marcar como completada.")
+        try:
+                numero_tarea=int(input())
+        except ValueError:
+                print("El dato debe de ser un número.")
+                return
+
+        if 1 <= numero_tarea <= len(lista_de_tareas):
+                lista_de_tareas[numero_tarea - 1]["estado"]=True
+                print(f"Tarea completada número:  {numero_tarea}")
+        else:
+                print("Número de tarea inválido.")
+                
+
+
+def eliminar_tarea(lista_de_tareas) -> None:
+        print(f"Lista de tareas agregadas, elimine una:")
+
+        if not lista_de_tareas:
+            print(f"No hay tareas agregadas, agregue una.")
+            return
+
+        listar_tareas(lista_de_tareas)
+
+        print("Que tarea deseas eliminar? ")
+
+        try:
+                numero_tarea=int(input())
+        except ValueError:
+                print("El dato debe de ser un número.")
+                return
+
+        if 1 <= numero_tarea <= len(lista_de_tareas):
+                lista_de_tareas.pop(numero_tarea- 1)
+                print(f"Tarea eliminada")
+        else:
+                print("Número de tarea inválido.")
+        
+        print("Lista de tareas actualizadas.")
+        listar_tareas(lista_de_tareas)

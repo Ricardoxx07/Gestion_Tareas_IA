@@ -1,0 +1,14 @@
+Java                         Python
+
+Clase                        class
+Método                       def
+List                         list
+Map                          dict
+try/catch                    try/except
+for                          for
+if                           if
+null                         None
+tipos explícitos             type hints
+Maven                        pip/pyproject
+Spring Boot                  FastAPI
+JPA/Hibernate                SQLAlchemy

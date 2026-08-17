@@ -1,0 +1,41 @@
+V1 ✅
+Gestor en memoria
+
+        ↓
+
+V2 🔄
+JSON + persistencia
+
+        ↓
+
+V3
+Separar módulos
+
+        ↓
+
+V4
+Entorno virtual + dependencias
+
+        ↓
+
+V5
+FastAPI
+
+        ↓
+
+V6
+Base de datos
+
+        ↓
+
+V7
+OpenAI API
+
+        ↓
+
+V8
+Docker
+
+        ↓
+
+🔥 Proyecto IA real

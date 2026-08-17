@@ -1,0 +1,18 @@
+[
+    {
+        "nombre": "Estudiar Python",
+        "completada": false
+    },
+    {
+        "nombre": "Aprender FastAPI",
+        "completada": true
+    },
+    {
+        "nombre": "Git",
+        "completada": false
+    },
+    {
+        "nombre": "Prueba",
+        "completada": false
+    }
+]
