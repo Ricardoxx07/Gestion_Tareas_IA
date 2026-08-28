@@ -1,0 +1,20 @@
+Fase 1 — Arquitectura
+
+Router ✅ siguiente
+Tests completos de API para POST/PATCH/DELETE
+Ejecutar todos los tests
+Limpieza/refactor final
+
+Fase 2 — Persistencia real
+5. PostgreSQL
+6. SQLAlchemy
+7. Adaptar Repository
+8. Migrar de JSON → PostgreSQL
+9. Tests con base de datos de prueba
+10. Revisar qué cambia en Service y qué NO debería cambiar
+
+Fase 3 — IA
+11. Conectar un modelo real mediante API
+12. Crear un servicio de IA
+13. Endpoint que utilice IA
+14. Manejo de errores, tokens, costos, etc.

@@ -1,0 +1,3 @@
+{
+  "tests/test_tarea_service.py::test_completar_tarea_guarda_en_repository": true
+}

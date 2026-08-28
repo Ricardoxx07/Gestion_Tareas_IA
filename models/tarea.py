@@ -6,3 +6,14 @@ from dataclasses import dataclass
 class Tarea:
     nombre: str
     completada: bool= False
+
+    def __init__(
+        self,
+        nombre: str,
+        completada: bool = False,
+        id: int | None = None
+    ):
+        self.id = id
+        self.nombre = nombre
+        self.completada = completada
+        

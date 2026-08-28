@@ -1,18 +1,12 @@
 [
     {
-        "nombre": "Estudiar Python",
+        "id": 1,
+        "nombre": "Leer un Mundo para Julius",
         "completada": false
     },
     {
-        "nombre": "Aprender FastAPI",
-        "completada": true
-    },
-    {
-        "nombre": "Git",
-        "completada": false
-    },
-    {
-        "nombre": "Prueba",
+        "id": 3,
+        "nombre": "Hacer feedback de proyecto",
         "completada": false
     }
 ]
