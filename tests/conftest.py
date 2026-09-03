@@ -1,4 +1,5 @@
 import os
+from uuid import uuid4
 
 import pytest
 from dotenv import load_dotenv
@@ -7,10 +8,12 @@ from sqlalchemy.orm import sessionmaker
 
 from database.database import Base
 from models.tarea_db import TareaDB
+from models.usuario_db import UsuarioDB
 from repository.tarea_repository_db import TareaRepositoryDB
+from repository.usuario_repository_db import UsuarioRepositoryDB
 
 
-load_dotenv()
+load_dotenv(".env.test")
 
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
@@ -35,7 +38,7 @@ def crear_tablas():
 
     yield
 
-    #Base.metadata.drop_all(bind=test_engine)
+    Base.metadata.drop_all(bind=test_engine)
 
 
 @pytest.fixture
@@ -50,6 +53,7 @@ def db():
         session.rollback()
 
         session.query(TareaDB).delete()
+        session.query(UsuarioDB).delete()
 
         session.commit()
         session.close()
@@ -57,5 +61,22 @@ def db():
 
 @pytest.fixture
 def tarea_repository_db(db):
-
     return TareaRepositoryDB(db)
+
+
+@pytest.fixture
+def usuario_repository_db(db):
+    return UsuarioRepositoryDB(db)
+
+
+@pytest.fixture
+def usuario_db(db):
+    usuario = UsuarioDB(
+        email=f"usuario-{uuid4()}@example.com",
+        password_hash="hash-de-prueba"
+    )
+    db.add(usuario)
+    db.commit()
+    db.refresh(usuario)
+
+    return usuario

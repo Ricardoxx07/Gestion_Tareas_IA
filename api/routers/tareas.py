@@ -8,7 +8,8 @@ from schemas.tarea_schema import (
 )
 
 from services.tarea_service import TareaService
-from api.dependencies import obtener_service
+from api.dependencies import obtener_service, obtener_usuario_actual
+from models.usuario import Usuario
 
 
 router = APIRouter(
@@ -22,9 +23,10 @@ router = APIRouter(
     response_model=list[TareaResponse]
 )
 def listar_tareas(
-    service: TareaService = Depends(obtener_service)
+    service: TareaService = Depends(obtener_service),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
 ):
-    return service.listar_tareas()
+    return service.listar_tareas(usuario_actual.id)
 
 
 @router.post(
@@ -34,9 +36,10 @@ def listar_tareas(
 )
 def crear_tarea(
     tarea: TareaRequest,
-    service: TareaService = Depends(obtener_service)
+    service: TareaService = Depends(obtener_service),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
 ):
-    return service.agregar_tarea(tarea.nombre)
+    return service.agregar_tarea(tarea.nombre, usuario_actual.id)
 
 
 @router.get(
@@ -45,9 +48,10 @@ def crear_tarea(
 )
 def obtener_tarea_por_id(
     id_tarea: int,
-    service: TareaService = Depends(obtener_service)
+    service: TareaService = Depends(obtener_service),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
 ):
-    tarea = service.obtener_tarea(id_tarea)
+    tarea = service.obtener_tarea(id_tarea, usuario_actual.id)
 
     if tarea is None:
         raise HTTPException(
@@ -65,10 +69,12 @@ def obtener_tarea_por_id(
 def actualizar_tarea(
     id_tarea: int,
     datos: TareaUpdate,
-    service: TareaService = Depends(obtener_service)
+    service: TareaService = Depends(obtener_service),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
 ):
     tarea = service.actualizar_tarea(
         id_tarea,
+        usuario_actual.id,
         datos.nombre,
         datos.completada
     )
@@ -89,10 +95,12 @@ def actualizar_tarea(
 def actualizar_parcialmente_tarea(
     id_tarea: int,
     datos: TareaPatch,
-    service: TareaService = Depends(obtener_service)
+    service: TareaService = Depends(obtener_service),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
 ):
     tarea = service.actualizar_parcialmente_tarea(
         id_tarea,
+        usuario_actual.id,
         datos.nombre,
         datos.completada
     )
@@ -112,9 +120,10 @@ def actualizar_parcialmente_tarea(
 )
 def eliminar_tarea(
     id_tarea: int,
-    service: TareaService = Depends(obtener_service)
+    service: TareaService = Depends(obtener_service),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
 ):
-    eliminado = service.eliminar_tarea(id_tarea)
+    eliminado = service.eliminar_tarea(id_tarea, usuario_actual.id)
 
     if not eliminado:
         raise HTTPException(

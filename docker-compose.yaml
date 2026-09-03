@@ -1,0 +1,24 @@
+services:
+
+  db:
+    image: postgres:17
+    container_name: gestor_tareas_db
+    environment:
+      POSTGRES_USER: gestor_app
+      POSTGRES_PASSWORD: gestor123
+      POSTGRES_DB: gestor_tareas
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: gestor_tareas_api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://gestor_app:gestor123@db:5432/gestor_tareas
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

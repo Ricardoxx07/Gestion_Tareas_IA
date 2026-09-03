@@ -1,0 +1,22 @@
+# Entornos y secretos locales
+.env
+.env.test
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Herramientas de pruebas y análisis
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editores
+.idea/
+.vscode/
+
+# Sistema operativo
+.DS_Store
+

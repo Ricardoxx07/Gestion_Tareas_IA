@@ -1,0 +1,22 @@
+✅ Python
+✅ Arquitectura por capas
+✅ FastAPI
+✅ Pydantic
+✅ SQLAlchemy
+✅ PostgreSQL
+✅ Docker
+✅ Docker Compose
+✅ Alembic
+
+👉 1. CRUD REST completo (check)
+👉 2. Validaciones + manejo de errores
+👉 3. Autenticación JWT
+👉 4. Usuarios + tareas por usuario
+👉 5. Tests completos
+👉 6. CI/CD con GitHub Actions
+👉 7. Integración con una LLM
+👉 8. Prompts estructurados
+👉 9. Control de tokens/costos
+👉 10. Feature de IA real
+👉 11. Dockerizar todo
+👉 12. Deploy

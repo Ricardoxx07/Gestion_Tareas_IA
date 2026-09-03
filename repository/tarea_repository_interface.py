@@ -5,11 +5,11 @@ from models.tarea import Tarea
 class TareaRepositoryInterface(ABC):
 
     @abstractmethod
-    def cargar_tareas(self) -> list[Tarea]:
+    def cargar_tareas(self, usuario_id: int) -> list[Tarea]:
         pass
 
     @abstractmethod
-    def obtener_tarea(self, id_tarea: int) -> Tarea | None:
+    def obtener_tarea(self, id_tarea: int, usuario_id: int) -> Tarea | None:
         pass
 
     @abstractmethod
@@ -21,5 +21,5 @@ class TareaRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def eliminar_tarea(self, id_tarea: int) -> bool:
+    def eliminar_tarea(self, id_tarea: int, usuario_id: int) -> bool:
         pass

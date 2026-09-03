@@ -4,8 +4,9 @@ from unittest.mock import Mock
 from fastapi.testclient import TestClient
 
 from api.main import app
-from api.dependencies import obtener_service
+from api.dependencies import obtener_service, obtener_usuario_actual
 from models.tarea import Tarea
+from models.usuario import Usuario
 from services.tarea_service import TareaService
 
 
@@ -18,13 +19,15 @@ def service_falso():
     tarea1 = Tarea(
         id=1,
         nombre="Estudiar Python",
-        completada=False
+        completada=False,
+        usuario_id=1
     )
 
     tarea2 = Tarea(
         id=2,
         nombre="Aprender FastAPI",
-        completada=True
+        completada=True,
+        usuario_id=1
     )
 
     tareas = {
@@ -32,10 +35,14 @@ def service_falso():
         2: tarea2
     }
 
-    repository.cargar_tareas.return_value = list(tareas.values())
+    def cargar_tareas(usuario_id):
+        return [tarea for tarea in tareas.values() if tarea.usuario_id == usuario_id]
 
-    def obtener_tarea(id_tarea):
-        return tareas.get(id_tarea)
+    repository.cargar_tareas.side_effect = cargar_tareas
+
+    def obtener_tarea(id_tarea, usuario_id):
+        tarea = tareas.get(id_tarea)
+        return tarea if tarea and tarea.usuario_id == usuario_id else None
 
     repository.obtener_tarea.side_effect = obtener_tarea
 
@@ -54,8 +61,9 @@ def service_falso():
 
     repository.actualizar_tarea.side_effect = actualizar_tarea
 
-    def eliminar_tarea(id_tarea):
-        if id_tarea not in tareas:
+    def eliminar_tarea(id_tarea, usuario_id):
+        tarea = tareas.get(id_tarea)
+        if tarea is None or tarea.usuario_id != usuario_id:
             return False
 
         del tareas[id_tarea]
@@ -71,6 +79,11 @@ def service_falso():
 @pytest.fixture
 def client(service_falso):
     app.dependency_overrides[obtener_service] = lambda: service_falso
+    app.dependency_overrides[obtener_usuario_actual] = lambda: Usuario(
+        id=1,
+        email="ricardo@example.com",
+        password_hash="hash-interno"
+    )
 
     client = TestClient(app)
 
@@ -167,7 +180,7 @@ def test_actualizar_tarea_inexistente(client):
     assert response.status_code == 404
 
     assert response.json() == {
-        "detail": "Tarea no encontrada"
+        "detail": "Tarea con id 999 no encontrada"
     }
 
 
@@ -199,7 +212,7 @@ def test_actualizar_parcialmente_tarea_inexistente(client):
     assert response.status_code == 404
 
     assert response.json() == {
-        "detail": "Tarea no encontrada"
+        "detail": "Tarea con id 999 no encontrada"
     }
 
 
@@ -215,5 +228,5 @@ def test_eliminar_tarea_inexistente(client):
     assert response.status_code == 404
 
     assert response.json() == {
-        "detail": "Tarea no encontrada"
+        "detail": "Tarea con id 999 no encontrada"
     }
