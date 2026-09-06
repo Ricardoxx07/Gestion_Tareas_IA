@@ -20,3 +20,8 @@ htmlcov/
 # Sistema operativo
 .DS_Store
 
+# Notas internas de planificación; el README es la documentación pública.
+docs/IA_ROADMAP.md
+docs/ROADMAP_PORTAFOLIO.md
+
+docs/
