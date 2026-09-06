@@ -2,8 +2,13 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from api.routers.auth import router as auth_router
+from api.routers.ia import router as ia_router
 from api.routers.tareas import router as tareas_router
-from exceptions.tarea_exceptions import TareaNoEncontradaError
+from exceptions.planificacion_exceptions import (
+    ProveedorIAError,
+    RecomendacionIAInvalidaError,
+)
+from exceptions.tarea_exceptions import TareaNoEncontradaError, PropuestaDesactualizadaError
 from exceptions.usuario_exceptions import (
     CredencialesInvalidasError,
     UsuarioYaExisteError,
@@ -19,6 +24,7 @@ app = FastAPI(
 
 app.include_router(tareas_router)
 app.include_router(auth_router)
+app.include_router(ia_router)
 
 
 @app.get("/")
@@ -48,6 +54,11 @@ async def tarea_no_encontrada_handler(
     )
 
 
+@app.exception_handler(PropuestaDesactualizadaError)
+async def propuesta_desactualizada_handler(request: Request, exc: PropuestaDesactualizadaError):
+    return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+
 @app.exception_handler(UsuarioYaExisteError)
 async def usuario_ya_existe_handler(
     request: Request,
@@ -68,4 +79,28 @@ async def credenciales_invalidas_handler(
         status_code=401,
         content={"detail": str(exc)},
         headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
+@app.exception_handler(RecomendacionIAInvalidaError)
+async def recomendacion_ia_invalida_handler(
+    request: Request,
+    exc: RecomendacionIAInvalidaError
+):
+    return JSONResponse(
+        status_code=502,
+        content={
+            "detail": f"La IA devolvió una respuesta inválida: {str(exc)}"
+        }
+    )
+
+
+@app.exception_handler(ProveedorIAError)
+async def proveedor_ia_error_handler(
+    request: Request,
+    exc: ProveedorIAError
+):
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "No fue posible obtener una recomendación en este momento"}
     )
