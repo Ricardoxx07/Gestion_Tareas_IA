@@ -22,6 +22,19 @@ class Settings(BaseSettings):
     OLLAMA_URL: str = "http://localhost:11434"
     OLLAMA_TIMEOUT_SECONDS: float = 60.0
     OLLAMA_MAX_TOKENS: int = 800
+    CORS_ORIGINS: str = (
+        "http://localhost:3000,http://127.0.0.1:3000,"
+        "http://localhost:5173,http://127.0.0.1:5173"
+    )
+
+    @property
+    def cors_allowed_origins(self) -> list[str]:
+        """Convierte una lista de orígenes separada por comas en una lista."""
+        return [
+            origen.strip()
+            for origen in self.CORS_ORIGINS.split(",")
+            if origen.strip()
+        ]
 
     model_config = SettingsConfigDict(
         env_file=".env"

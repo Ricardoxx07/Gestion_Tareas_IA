@@ -1,6 +1,7 @@
 """Adaptador para Ollama; el resto de la aplicación no depende de su API."""
 
 import json
+import logging
 from datetime import date
 
 import httpx
@@ -32,6 +33,9 @@ from schemas.propuesta_tareas_schema import (
     TareaPropuestaIAResponse,
 )
 from schemas.descomposicion_tarea_schema import DescomposicionTareaIAResponse
+
+
+logger = logging.getLogger(__name__)
 
 
 class ProveedorOllama(ProveedorIAInterface):
@@ -294,6 +298,10 @@ class ProveedorOllama(ProveedorIAInterface):
             respuesta.raise_for_status()
             contenido = respuesta.json()["message"]["content"]
         except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
+            logger.warning(
+                "Falló una solicitud a Ollama (%s)",
+                type(exc).__name__,
+            )
             raise ProveedorIAError("No fue posible comunicarse con Ollama") from exc
         finally:
             if self.cliente is None:

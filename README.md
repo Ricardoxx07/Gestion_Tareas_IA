@@ -194,8 +194,12 @@ interactiva de FastAPI: `/docs`.
 - Cada solicitud protegida obtiene el usuario desde el JWT y solo opera sobre
   sus propios datos.
 - Las entradas HTTP y las salidas de IA se validan con Pydantic.
+- CORS acepta únicamente los orígenes configurados en `CORS_ORIGINS`; no se
+  habilita el comodín `*` junto con credenciales JWT.
 - Ollama no se considera una fuente confiable: una respuesta mal estructurada
   se rechaza antes de usarse y devuelve un error controlado.
+- Los fallos de proveedor y las respuestas inválidas se registran sin incluir
+  prompts, tokens ni contenido crudo generado por el modelo.
 - Las reglas deterministas del backend tienen prioridad sobre la sugerencia del
   modelo cuando deben calcularse o validarse fechas, prioridades o relaciones
   con tareas existentes.
@@ -250,6 +254,7 @@ las variables requeridas por la aplicación:
 | `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Configuración de los JWT. |
 | `IA_PROVIDER` | `falso` u `ollama`. |
 | `OLLAMA_MODEL`, `OLLAMA_URL`, `OLLAMA_TIMEOUT_SECONDS`, `OLLAMA_MAX_TOKENS` | Configuración del proveedor Ollama. |
+| `CORS_ORIGINS` | Orígenes de frontend permitidos, separados por comas. |
 
 `.env` y `.env.test` están ignorados por Git. No subas credenciales reales al
 repositorio.

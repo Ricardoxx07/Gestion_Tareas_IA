@@ -90,7 +90,7 @@ def test_recomendar_tareas_oculta_respuesta_invalida_del_proveedor(usuario_actua
 
     assert response.status_code == 502
     assert response.json() == {
-        "detail": "La IA devolvió una respuesta inválida: ID interno no permitido"
+        "detail": "La respuesta de la IA no tiene un formato válido"
     }
 
 
@@ -106,5 +106,5 @@ def test_recomendar_tareas_informa_proveedor_no_disponible(usuario_actual):
 
     assert response.status_code == 503
     assert response.json() == {
-        "detail": "No fue posible obtener una recomendación en este momento"
+        "detail": "El proveedor de IA no está disponible. Intenta nuevamente más tarde"
     }

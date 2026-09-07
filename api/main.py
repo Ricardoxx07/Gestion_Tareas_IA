@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from api.routers.auth import router as auth_router
 from api.routers.ia import router as ia_router
 from api.routers.tareas import router as tareas_router
+from config.settings import settings
 from exceptions.planificacion_exceptions import (
     ProveedorIAError,
     RecomendacionIAInvalidaError,
@@ -15,10 +19,21 @@ from exceptions.usuario_exceptions import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 app = FastAPI(
     title="API Gestor de Tareas",
     description="API REST para gestionar tareas",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -87,11 +102,13 @@ async def recomendacion_ia_invalida_handler(
     request: Request,
     exc: RecomendacionIAInvalidaError
 ):
+    logger.warning(
+        "Se rechazó una respuesta inválida del proveedor IA (%s)",
+        type(exc).__name__,
+    )
     return JSONResponse(
         status_code=502,
-        content={
-            "detail": f"La IA devolvió una respuesta inválida: {str(exc)}"
-        }
+        content={"detail": "La respuesta de la IA no tiene un formato válido"},
     )
 
 
@@ -100,7 +117,13 @@ async def proveedor_ia_error_handler(
     request: Request,
     exc: ProveedorIAError
 ):
+    logger.warning(
+        "El proveedor IA no estuvo disponible (%s)",
+        type(exc).__name__,
+    )
     return JSONResponse(
         status_code=503,
-        content={"detail": "No fue posible obtener una recomendación en este momento"}
+        content={
+            "detail": "El proveedor de IA no está disponible. Intenta nuevamente más tarde"
+        },
     )
