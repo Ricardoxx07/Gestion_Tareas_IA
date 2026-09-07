@@ -15,6 +15,9 @@ from services.calculador_carga_diaria import CalculadorCargaDiaria
 class SobrecargaService:
     """Detecta carga excesiva con reglas deterministas y la IA solo la explica."""
 
+    MAX_TAREAS_POR_ALERTA_IA = 20
+    PRIORIDAD_ORDEN = {"alta": 0, "media": 1, "baja": 2}
+
     def __init__(
         self,
         tarea_repository: TareaRepositoryInterface,
@@ -52,7 +55,8 @@ class SobrecargaService:
                 alertas=[],
             )
 
-        explicaciones = self.proveedor_ia.explicar_sobrecargas(cargas)
+        cargas_contexto = self._limitar_cargas_para_ia(cargas)
+        explicaciones = self.proveedor_ia.explicar_sobrecargas(cargas_contexto)
         self._validar_explicaciones(explicaciones, cargas)
         explicaciones_por_fecha = {
             explicacion.fecha: explicacion for explicacion in explicaciones
@@ -73,6 +77,28 @@ class SobrecargaService:
                 for carga in cargas
             ],
         )
+
+    def _limitar_cargas_para_ia(
+        self,
+        cargas: list[CargaDiaria],
+    ) -> list[CargaDiaria]:
+        """Conserva la alerta completa, pero acota su contexto para el modelo."""
+        return [
+            CargaDiaria(
+                fecha=carga.fecha,
+                tareas=sorted(
+                    carga.tareas,
+                    key=lambda tarea: (
+                        tarea.fecha_limite is None,
+                        tarea.fecha_limite or date.max,
+                        self.PRIORIDAD_ORDEN[tarea.prioridad],
+                        tarea.id or 0,
+                    ),
+                )[: self.MAX_TAREAS_POR_ALERTA_IA],
+                incluye_tareas_vencidas=carga.incluye_tareas_vencidas,
+            )
+            for carga in cargas
+        ]
 
     @staticmethod
     def _validar_explicaciones(

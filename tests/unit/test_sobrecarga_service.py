@@ -87,6 +87,40 @@ def test_no_llama_al_proveedor_si_no_hay_sobrecarga():
     assert proveedor.cargas_recibidas is None
 
 
+def test_limita_el_detalle_enviado_a_ia_y_conserva_la_alerta_completa():
+    inicio = date(2026, 9, 5)
+    tareas = [
+        Tarea(
+            id=identificador,
+            usuario_id=1,
+            nombre=f"Tarea {identificador}",
+            fecha_limite=inicio,
+        )
+        for identificador in range(1, 22)
+    ]
+    proveedor = ProveedorIAEspia(
+        [
+            ExplicacionSobrecarga(
+                fecha=inicio,
+                mensaje="Hay varias tareas acumuladas.",
+                sugerencia="Distribuye las tareas durante la semana.",
+            )
+        ]
+    )
+    service = SobrecargaService(TareaRepositoryFalso(tareas), proveedor)
+
+    analisis = service.detectar_sobrecarga(
+        usuario_id=1,
+        fecha_inicio=inicio,
+        max_tareas_por_dia=3,
+    )
+
+    assert proveedor.cargas_recibidas is not None
+    assert len(proveedor.cargas_recibidas[0].tareas) == 20
+    assert analisis.alertas[0].cantidad_tareas == 21
+    assert len(analisis.alertas[0].tarea_ids) == 21
+
+
 @pytest.mark.parametrize(
     "explicaciones",
     [

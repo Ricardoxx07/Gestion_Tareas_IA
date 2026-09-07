@@ -21,7 +21,7 @@ class PropuestaReprogramacionIAResponse(BaseModel):
 class PropuestasReprogramacionIAResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    propuestas: list[PropuestaReprogramacionIAResponse]
+    propuestas: list[PropuestaReprogramacionIAResponse] = Field(max_length=8)
 
 
 class PropuestaReprogramacionResponse(PropuestaReprogramacionIAResponse):
@@ -35,4 +35,4 @@ class PropuestasReprogramacionResponse(BaseModel):
     fecha_inicio: date
     fecha_fin: date
     max_tareas_por_dia: int
-    propuestas: list[PropuestaReprogramacionResponse]
+    propuestas: list[PropuestaReprogramacionResponse] = Field(max_length=8)

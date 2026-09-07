@@ -22,7 +22,7 @@ class ExplicacionSobrecargaIAResponse(BaseModel):
 class SobrecargasIAResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    alertas: list[ExplicacionSobrecargaIAResponse]
+    alertas: list[ExplicacionSobrecargaIAResponse] = Field(max_length=31)
 
 
 class AlertaSobrecargaResponse(ExplicacionSobrecargaIAResponse):
@@ -36,4 +36,4 @@ class AnalisisSobrecargaResponse(BaseModel):
     fecha_inicio: date
     fecha_fin: date
     max_tareas_por_dia: int
-    alertas: list[AlertaSobrecargaResponse]
+    alertas: list[AlertaSobrecargaResponse] = Field(max_length=31)

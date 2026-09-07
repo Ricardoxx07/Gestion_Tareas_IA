@@ -493,7 +493,7 @@ class ProveedorOllama(ProveedorIAInterface):
                     "devuelvas fechas: el backend asignará la fecha sugerida según cupos "
                     "reales. No propongas más cambios que "
                     "max_reprogramaciones para cada fecha sobrecargada ni más tareas que "
-                    f"{cupos_totales} propuestas en total. Prefiere mover tareas de menor "
+                    f"{min(cupos_totales, 8)} propuestas en total. Prefiere mover tareas de menor "
                     "prioridad cuando el contexto no indique otra razón. Cada motivo debe "
                     "explicar la propuesta brevemente. Devuelve exclusivamente un JSON "
                     "que cumpla el esquema solicitado, sin Markdown ni texto adicional."
@@ -553,7 +553,8 @@ class ProveedorOllama(ProveedorIAInterface):
                 "content": (
                     "Extrae propuestas de tareas del texto del usuario. No crees ni "
                     "modifiques datos: solo propón tareas. Incluye una propuesta por cada "
-                    "actividad independiente expresada; no omitas actividades explícitas. "
+                    "actividad independiente expresada, hasta un máximo de ocho; no omitas "
+                    "actividades explícitas dentro de ese límite. "
                     "El backend entrega bloques temporales con fechas calculadas. Para "
                     "cada tarea usa exclusivamente un bloque_temporal_id existente. No "
                     "calcules, cambies ni devuelvas fechas. prioridad_sugerida nunca puede "

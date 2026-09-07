@@ -91,6 +91,35 @@ def test_no_propone_mover_tareas_vencidas():
     assert proveedor.cargas_recibidas is None
 
 
+def test_limita_el_contexto_de_reprogramacion_enviado_a_ia():
+    inicio = date(2026, 9, 5)
+    fecha_sobrecargada = date(2026, 9, 8)
+    proveedor = ProveedorIAEspia([])
+    service = ReprogramacionService(
+        TareaRepositoryFalso(
+            [
+                Tarea(
+                    id=identificador,
+                    usuario_id=1,
+                    nombre=f"Tarea {identificador}",
+                    fecha_limite=fecha_sobrecargada,
+                )
+                for identificador in range(1, 22)
+            ]
+        ),
+        proveedor,
+    )
+
+    service.proponer_reprogramaciones(
+        usuario_id=1,
+        fecha_inicio=inicio,
+        max_tareas_por_dia=3,
+    )
+
+    assert proveedor.cargas_recibidas is not None
+    assert sum(len(carga.tareas) for carga in proveedor.cargas_recibidas) == 20
+
+
 def test_descarta_el_exceso_de_propuestas_del_mismo_dia_sobrecargado():
     proveedor = ProveedorIAEspia(
         [

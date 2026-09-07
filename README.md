@@ -194,6 +194,9 @@ interactiva de FastAPI: `/docs`.
 - Cada solicitud protegida obtiene el usuario desde el JWT y solo opera sobre
   sus propios datos.
 - Las entradas HTTP y las salidas de IA se validan con Pydantic.
+- El contexto que llega al modelo está acotado y ordenado de forma
+  determinista; las respuestas también tienen máximos compatibles con los
+  flujos de confirmación.
 - CORS acepta únicamente los orígenes configurados en `CORS_ORIGINS`; no se
   habilita el comodín `*` junto con credenciales JWT.
 - Ollama no se considera una fuente confiable: una respuesta mal estructurada

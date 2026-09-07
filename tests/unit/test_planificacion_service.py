@@ -76,6 +76,34 @@ def test_solo_entrega_tareas_pendientes_del_usuario_al_proveedor():
     assert [tarea.id for tarea in proveedor.tareas_recibidas] == [1]
 
 
+def test_limita_el_contexto_y_conserva_las_tareas_mas_relevantes():
+    tareas = [
+        Tarea(id=identificador, usuario_id=1, nombre=f"Tarea {identificador}")
+        for identificador in range(1, 21)
+    ]
+    tareas.append(
+        Tarea(
+            id=21,
+            usuario_id=1,
+            nombre="Prioridad alta",
+            prioridad="alta",
+        )
+    )
+    proveedor = ProveedorIAEspia(
+        Planificacion(
+            recomendaciones=[RecomendacionTarea(21, 1, "Tiene prioridad alta.")],
+            resumen="Se seleccionó el contexto relevante.",
+        )
+    )
+    service = PlanificacionService(TareaRepositoryFalso(tareas), proveedor)
+
+    service.recomendar_tareas(1, hoy=date(2026, 9, 3))
+
+    assert proveedor.tareas_recibidas is not None
+    assert len(proveedor.tareas_recibidas) == 20
+    assert [tarea.id for tarea in proveedor.tareas_recibidas] == [21, *range(1, 20)]
+
+
 def test_no_llama_al_proveedor_si_no_hay_tareas_pendientes():
     proveedor = ProveedorIAEspia(Planificacion([], "No debería usarse"))
     service = PlanificacionService(

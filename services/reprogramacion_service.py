@@ -19,6 +19,9 @@ from services.calculador_carga_diaria import CalculadorCargaDiaria
 class ReprogramacionService:
     """Propone cambios de fecha; nunca persiste cambios automáticamente."""
 
+    MAX_TAREAS_CONTEXTO_IA = 20
+    PRIORIDAD_ORDEN = {"baja": 0, "media": 1, "alta": 2}
+
     def __init__(
         self,
         tarea_repository: TareaRepositoryInterface,
@@ -72,13 +75,14 @@ class ReprogramacionService:
                 propuestas=[],
             )
 
+        cargas_contexto = self._limitar_cargas_para_ia(cargas_reprogramables)
         propuestas = self.proveedor_ia.proponer_reprogramaciones(
-            cargas_reprogramables,
+            cargas_contexto,
             dias_disponibles,
         )
         propuestas = self._normalizar_propuestas(
             propuestas,
-            cargas_reprogramables,
+            cargas_contexto,
             dias_disponibles,
         )
         fechas_sugeridas = self._asignar_fechas_disponibles(
@@ -88,7 +92,7 @@ class ReprogramacionService:
 
         fechas_actuales = {
             tarea.id: carga.fecha
-            for carga in cargas_reprogramables
+            for carga in cargas_contexto
             for tarea in carga.tareas
         }
         return PropuestasReprogramacion(
@@ -132,6 +136,55 @@ class ReprogramacionService:
                     )
                 )
         return cargas_reprogramables
+
+    def _limitar_cargas_para_ia(
+        self,
+        cargas: list[CargaReprogramable],
+    ) -> list[CargaReprogramable]:
+        """Distribuye un contexto acotado entre los días sobrecargados."""
+        cantidad_total = sum(len(carga.tareas) for carga in cargas)
+        if cantidad_total <= self.MAX_TAREAS_CONTEXTO_IA:
+            return cargas
+
+        tareas_ordenadas = {
+            carga.fecha: sorted(
+                carga.tareas,
+                key=lambda tarea: (
+                    self.PRIORIDAD_ORDEN[tarea.prioridad],
+                    tarea.id or 0,
+                ),
+            )
+            for carga in cargas
+        }
+        seleccionadas = {carga.fecha: [] for carga in cargas}
+        restantes = self.MAX_TAREAS_CONTEXTO_IA
+
+        for carga in cargas:
+            if restantes and tareas_ordenadas[carga.fecha]:
+                seleccionadas[carga.fecha].append(
+                    tareas_ordenadas[carga.fecha].pop(0)
+                )
+                restantes -= 1
+
+        for carga in cargas:
+            while restantes and tareas_ordenadas[carga.fecha]:
+                seleccionadas[carga.fecha].append(
+                    tareas_ordenadas[carga.fecha].pop(0)
+                )
+                restantes -= 1
+
+        return [
+            CargaReprogramable(
+                fecha=carga.fecha,
+                tareas=seleccionadas[carga.fecha],
+                max_reprogramaciones=min(
+                    carga.max_reprogramaciones,
+                    len(seleccionadas[carga.fecha]),
+                ),
+            )
+            for carga in cargas
+            if seleccionadas[carga.fecha]
+        ]
 
     @staticmethod
     def _obtener_dias_disponibles(

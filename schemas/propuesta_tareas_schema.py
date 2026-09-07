@@ -75,7 +75,7 @@ class TareaPropuestaResponse(TareaPropuestaBase):
 class PropuestasTareasResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    tareas_propuestas: list[TareaPropuestaResponse]
+    tareas_propuestas: list[TareaPropuestaResponse] = Field(max_length=8)
 
 
 class TareaPropuestaIAResponse(TareaPropuestaBase):
@@ -88,4 +88,4 @@ class TareaPropuestaIAResponse(TareaPropuestaBase):
 class PropuestasTareasIAResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    tareas_propuestas: list[TareaPropuestaIAResponse]
+    tareas_propuestas: list[TareaPropuestaIAResponse] = Field(max_length=8)
