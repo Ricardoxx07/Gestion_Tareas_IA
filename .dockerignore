@@ -9,3 +9,5 @@ venv/
 .env.example
 .idea/
 .vscode/
+tests/
+docs/

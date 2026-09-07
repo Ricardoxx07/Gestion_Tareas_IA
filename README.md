@@ -329,11 +329,38 @@ En cada `push` y `pull request`, GitHub Actions:
 
 ## Docker
 
-El repositorio incluye `Dockerfile`, `docker-compose.yaml` y `.dockerignore`
-como base para contenerizar la API y PostgreSQL. La ejecución reproducible desde
-cero con Docker Compose —variables, migraciones, credenciales y healthchecks—
-se validará antes del despliegue público. Por ahora, la vía recomendada para
-ejecutar y evaluar el proyecto es la instalación local descrita arriba.
+El repositorio incluye una ejecución reproducible con Docker Compose para la API
+y PostgreSQL. Al iniciar, Compose espera el healthcheck de PostgreSQL, aplica
+las migraciones de Alembic y luego inicia Uvicorn.
+
+Con `.env` configurado como se indica arriba, ejecuta:
+
+```bash
+docker compose up --build -d
+docker compose ps
+docker compose logs api --tail=100
+curl http://127.0.0.1:8000/
+```
+
+Ambos servicios deben aparecer como `healthy`. Para comprobar la revisión de
+base de datos desde el contenedor:
+
+```bash
+docker compose exec api alembic current
+```
+
+Por defecto, Compose usa `IA_PROVIDER=falso` dentro de la API para que el
+entorno contenerizado no dependa de una instancia de Ollama fuera de Docker. La
+integración real con Ollama sigue disponible mediante la ejecución local.
+
+Para detener los contenedores preservando los datos del volumen PostgreSQL:
+
+```bash
+docker compose down
+```
+
+No uses `docker compose down -v` salvo que quieras eliminar explícitamente la
+base de datos local creada por Docker.
 
 ## Estado del proyecto
 
