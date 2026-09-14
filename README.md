@@ -227,7 +227,7 @@ cd Gesti-n-de-tareas-IA
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r backend/requirements.txt
 ```
 
 En Windows, activa el entorno con:
@@ -260,7 +260,8 @@ las variables requeridas por la aplicación:
 | `CORS_ORIGINS` | Orígenes de frontend permitidos, separados por comas. |
 
 `.env` y `.env.test` están ignorados por Git. No subas credenciales reales al
-repositorio.
+repositorio. El backend localiza el único archivo `.env` de la raíz del
+repositorio automáticamente.
 
 ### Base de datos y migraciones
 
@@ -271,18 +272,21 @@ URLs deben coincidir con `DATABASE_URL` y `TEST_DATABASE_URL`.
 Aplica las migraciones:
 
 ```bash
+cd backend
 alembic upgrade head
 ```
 
 Para comprobar la versión aplicada:
 
 ```bash
+cd backend
 alembic current
 ```
 
 ### Ejecutar la API
 
 ```bash
+cd backend
 uvicorn api.main:app --reload
 ```
 
@@ -324,6 +328,7 @@ manualmente.
 Ejecuta toda la suite con la base de pruebas configurada:
 
 ```bash
+cd backend
 python -m pytest -q
 ```
 
@@ -338,8 +343,9 @@ En cada `push` y `pull request`, GitHub Actions:
 ## Docker
 
 El repositorio incluye una ejecución reproducible con Docker Compose para la API
-y PostgreSQL. Al iniciar, Compose espera el healthcheck de PostgreSQL, aplica
-las migraciones de Alembic y luego inicia Uvicorn.
+y PostgreSQL. Ejecuta los siguientes comandos desde la raíz del repositorio. Al
+iniciar, Compose espera el healthcheck de PostgreSQL, aplica las migraciones de
+Alembic y luego inicia Uvicorn.
 
 Con `.env` configurado como se indica arriba, ejecuta:
 
