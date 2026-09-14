@@ -255,8 +255,9 @@ las variables requeridas por la aplicación:
 | `TEST_DATABASE_URL` | Base de datos aislada para las pruebas de integración. |
 | `JWT_SECRET_KEY` | Clave de firma de los tokens; debe ser larga, aleatoria y privada. |
 | `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Configuración de los JWT. |
-| `IA_PROVIDER` | `falso` u `ollama`. |
+| `IA_PROVIDER` | `falso`, `ollama` o `groq`. |
 | `OLLAMA_MODEL`, `OLLAMA_URL`, `OLLAMA_TIMEOUT_SECONDS`, `OLLAMA_MAX_TOKENS` | Configuración del proveedor Ollama. |
+| `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_TIMEOUT_SECONDS`, `GROQ_MAX_TOKENS` | Configuración del proveedor Groq. La clave es obligatoria al seleccionar `IA_PROVIDER=groq`. |
 | `CORS_ORIGINS` | Orígenes de frontend permitidos, separados por comas. |
 
 `.env` y `.env.test` están ignorados por Git. No subas credenciales reales al
@@ -322,6 +323,23 @@ OLLAMA_URL=http://localhost:11434
 Reinicia Uvicorn después de cambiar variables de entorno. Si Ollama está
 instalado como servicio, normalmente no será necesario ejecutar `ollama serve`
 manualmente.
+
+### Usar Groq
+
+Configura una sola selección de proveedor en `.env` y proporciona una clave
+válida de Groq:
+
+```env
+IA_PROVIDER=groq
+GROQ_API_KEY=tu_clave_de_groq
+GROQ_MODEL=openai/gpt-oss-20b
+GROQ_TIMEOUT_SECONDS=30
+GROQ_MAX_TOKENS=900
+```
+
+Reinicia Uvicorn para que cargue la configuración. Los endpoints de IA usarán
+Groq; el proveedor solo genera propuestas y la persistencia sigue requiriendo
+la confirmación explícita del usuario.
 
 ## Pruebas y CI
 

@@ -1,5 +1,6 @@
 from ai.proveedor_ia_falso import ProveedorIAFalso
 from ai.proveedor_ia_interface import ProveedorIAInterface
+from ai.proveedor_groq import ProveedorGroq
 from ai.proveedor_ollama import ProveedorOllama
 from config.settings import settings
 from fastapi import Depends, HTTPException, status
@@ -136,6 +137,17 @@ def obtener_proveedor_ia() -> ProveedorIAInterface:
             url_base=settings.OLLAMA_URL,
             timeout_seconds=settings.OLLAMA_TIMEOUT_SECONDS,
             max_tokens=settings.OLLAMA_MAX_TOKENS,
+        )
+
+    if settings.IA_PROVIDER == "groq":
+        if not settings.GROQ_API_KEY:
+            raise ValueError("GROQ_API_KEY es obligatoria cuando IA_PROVIDER=groq")
+
+        return ProveedorGroq(
+            api_key=settings.GROQ_API_KEY,
+            modelo=settings.GROQ_MODEL,
+            timeout=settings.GROQ_TIMEOUT_SECONDS,
+            max_tokens=settings.GROQ_MAX_TOKENS,
         )
 
     return ProveedorIAFalso()
