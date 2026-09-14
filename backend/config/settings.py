@@ -22,11 +22,20 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # El proveedor falso es el valor seguro para desarrollo, CI y pruebas.
-    IA_PROVIDER: Literal["falso", "ollama"] = "falso"
+    IA_PROVIDER: Literal["falso", "ollama", "groq"] = "falso"
     OLLAMA_MODEL: str = "llama3.2:3b"
     OLLAMA_URL: str = "http://localhost:11434"
     OLLAMA_TIMEOUT_SECONDS: float = 60.0
     OLLAMA_MAX_TOKENS: int = 800
+
+    # Groq
+    GROQ_API_KEY: str | None = None
+    GROQ_MODEL: str = "openai/gpt-oss-20b"
+    GROQ_TIMEOUT_SECONDS: float = 30.0
+    GROQ_MAX_TOKENS: int = 900
+
+
+
     CORS_ORIGINS: str = (
         "http://localhost:3000,http://127.0.0.1:3000,"
         "http://localhost:5173,http://127.0.0.1:5173"
