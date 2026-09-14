@@ -163,10 +163,8 @@ class ProveedorOllama(ProveedorIAInterface):
         )
 
         try:
-            respuesta = PropuestasReprogramacionIAResponse.model_validate_json(
-                contenido
-            )
-        except (ValidationError, ValueError) as exc:
+            respuesta = self._validar_propuestas_reprogramacion(contenido)
+        except (ValidationError, ValueError, TypeError, json.JSONDecodeError) as exc:
             raise RecomendacionIAInvalidaError(
                 "Ollama no devolvió la estructura de reprogramación esperada"
             ) from exc
@@ -178,6 +176,40 @@ class ProveedorOllama(ProveedorIAInterface):
             )
             for propuesta in respuesta.propuestas
         ]
+
+    @staticmethod
+    def _validar_propuestas_reprogramacion(
+        contenido: str,
+    ) -> PropuestasReprogramacionIAResponse:
+        """Conserva solo la decisión que puede tomar el modelo.
+
+        Las fechas las asigna el servicio según los cupos reales. Algunos modelos
+        pequeños las devuelven igualmente; descartarlas evita rechazar una propuesta
+        válida sin permitir que influyan en la reprogramación persistente.
+        """
+        contenido_limpio = contenido.strip()
+        if contenido_limpio.startswith("```"):
+            lineas = contenido_limpio.splitlines()
+            if len(lineas) < 3 or lineas[-1].strip() != "```":
+                raise ValueError("El bloque JSON de Ollama no está cerrado")
+            contenido_limpio = "\n".join(lineas[1:-1]).strip()
+
+        datos = json.loads(contenido_limpio)
+        propuestas = datos["propuestas"]
+        if not isinstance(propuestas, list):
+            raise TypeError("Las propuestas de reprogramación deben ser una lista")
+
+        return PropuestasReprogramacionIAResponse.model_validate(
+            {
+                "propuestas": [
+                    {
+                        "tarea_id": propuesta["tarea_id"],
+                        "motivo": propuesta["motivo"],
+                    }
+                    for propuesta in propuestas
+                ]
+            }
+        )
 
     def proponer_tareas(
         self,
@@ -495,8 +527,9 @@ class ProveedorOllama(ProveedorIAInterface):
                     "max_reprogramaciones para cada fecha sobrecargada ni más tareas que "
                     f"{min(cupos_totales, 8)} propuestas en total. Prefiere mover tareas de menor "
                     "prioridad cuando el contexto no indique otra razón. Cada motivo debe "
-                    "explicar la propuesta brevemente. Devuelve exclusivamente un JSON "
-                    "que cumpla el esquema solicitado, sin Markdown ni texto adicional."
+                    "explicar la propuesta brevemente. La forma exacta es "
+                    '{"propuestas":[{"tarea_id":123,"motivo":"Motivo breve."}]}. '
+                    "Devuelve exclusivamente ese JSON, sin Markdown ni texto adicional."
                 ),
             },
             {

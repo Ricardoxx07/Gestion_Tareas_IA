@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -13,7 +14,9 @@ from repository.tarea_repository_db import TareaRepositoryDB
 from repository.usuario_repository_db import UsuarioRepositoryDB
 
 
-load_dotenv(".env.test")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")

@@ -1,6 +1,10 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -11,6 +15,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
     DATABASE_URL_DOCKER: str
+    TEST_DATABASE_URL: str | None = None
 
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
@@ -36,9 +41,7 @@ class Settings(BaseSettings):
             if origen.strip()
         ]
 
-    model_config = SettingsConfigDict(
-        env_file=".env"
-    )
+    model_config = SettingsConfigDict(env_file=PROJECT_ROOT / ".env")
 
 
 settings = Settings()

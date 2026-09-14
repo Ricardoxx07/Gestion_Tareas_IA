@@ -241,6 +241,47 @@ def test_propone_reprogramaciones_solo_con_tareas_y_fechas_del_contexto():
     assert "No devuelvas fechas" in cuerpo["messages"][0]["content"]
 
 
+def test_reprogramacion_descarta_fechas_que_ollama_no_debe_decidir():
+    proveedor, cliente = crear_proveedor(
+        lambda solicitud: httpx.Response(
+            200,
+            json={
+                "message": {
+                    "content": json.dumps(
+                        {
+                            "propuestas": [
+                                {
+                                    "tarea_id": 7,
+                                    "motivo": "Tiene menor prioridad en el día sobrecargado.",
+                                    "fecha_actual": "2026-09-08",
+                                    "fecha_sugerida": "2026-09-10",
+                                }
+                            ]
+                        }
+                    )
+                }
+            },
+        )
+    )
+    try:
+        resultado = proveedor.proponer_reprogramaciones(
+            [
+                CargaReprogramable(
+                    fecha=date(2026, 9, 8),
+                    max_reprogramaciones=1,
+                    tareas=[Tarea(id=7, nombre="Comprar materiales", prioridad="baja")],
+                )
+            ],
+            [DiaDisponible(fecha=date(2026, 9, 9), cupos_disponibles=2)],
+        )
+    finally:
+        cliente.close()
+
+    assert len(resultado) == 1
+    assert resultado[0].tarea_id == 7
+    assert resultado[0].motivo == "Tiene menor prioridad en el día sobrecargado."
+
+
 @pytest.mark.parametrize(
     "respuesta_ollama",
     [

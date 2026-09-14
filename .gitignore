@@ -4,6 +4,11 @@
 .venv/
 venv/
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
 # Python
 __pycache__/
 *.py[cod]
