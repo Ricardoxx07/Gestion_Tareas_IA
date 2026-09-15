@@ -48,13 +48,12 @@ def inicio():
         "mensaje": "API del gestor de tareas funcionando"
     }
 
-@app.get("/prueba-async")
-async def prueba_async():
+@app.get("/health", tags=["Health"])
+def health():
     return {
-        "tipo": "async",
-        "ok": True
+        "status": "ok",
+        "service": "gestor-tareas-api"
     }
-
 
 @app.exception_handler(TareaNoEncontradaError)
 async def tarea_no_encontrada_handler(
