@@ -11,7 +11,9 @@ Aplicación web full-stack para organizar tareas personales y usar IA como asist
 <!-- TODO: agregar URL de producción del frontend. -->
 <!-- TODO: agregar URL pública de la API y de Swagger/OpenAPI, si se despliegan. -->
 
-El frontend está desplegado en Vercel, la API FastAPI en Render y PostgreSQL en Neon. Faltan por incorporar a este documento las URLs públicas. No hay una captura o GIF versionados en el repositorio. Para desarrollo local, Docker Compose expone el frontend en `http://localhost:8080` y Swagger en `http://localhost:8001/docs`.
+El frontend está desplegado en Vercel, la API FastAPI en Render y PostgreSQL en Neon.
+Vercel = https://gestion-tareas-ia.vercel.app/login
+, Docker Compose expone el frontend en `http://localhost:8080` y Swagger en `http://localhost:8001/docs`.
 
 ## El problema y la solución
 
