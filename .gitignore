@@ -30,3 +30,21 @@ docs/IA_ROADMAP.md
 docs/ROADMAP_PORTAFOLIO.md
 
 docs/
+
+# Archivos locales/legacy no públicos
+AGENTS.md
+backend/crear_sesion.py
+backend/crear_tabla.py
+backend/main.py
+backend/probar_db.py
+backend/probar_repository_db.py
+backend/data/
+
+# Archivos locales/legacy no públicos
+AGENTS.md
+backend/crear_sesion.py
+backend/crear_tabla.py
+backend/main.py
+backend/probar_db.py
+backend/probar_repository_db.py
+backend/data/
