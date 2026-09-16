@@ -39,5 +39,3 @@ backend/main.py
 backend/probar_db.py
 backend/probar_repository_db.py
 backend/data/
-
-
