@@ -1,402 +1,463 @@
 # Gestor de tareas con IA
 
+Aplicación web full-stack para organizar tareas personales y usar IA como asistente de planificación, manteniendo siempre la decisión y la persistencia bajo control del usuario.
+
 [![Tests](https://github.com/Ricardoxx07/Gesti-n-de-tareas-IA/actions/workflows/tests.yml/badge.svg)](https://github.com/Ricardoxx07/Gesti-n-de-tareas-IA/actions/workflows/tests.yml)
 
-Backend de gestión de tareas que usa IA para transformar lenguaje natural y el
-estado real de las tareas en propuestas estructuradas de planificación. Puede
-sugerir tareas, subtareas, prioridades, planes diarios y reprogramaciones, pero
-no modifica datos de forma autónoma: las operaciones persistentes requieren
-validación del backend y confirmación explícita del usuario.
+<!-- TODO: agregar un GIF del flujo principal: registro/inicio de sesión → crear tarea → planificar con IA → revisar y confirmar una propuesta → ver el cambio persistido. -->
 
-El proyecto combina una API REST tradicional con una integración LLM local
-desacoplada, manteniendo el control de las reglas de negocio y de PostgreSQL en
-el backend.
+## 🚀 Demo
 
-## Problema que resuelve
+<!-- TODO: agregar URL de producción del frontend. -->
+<!-- TODO: agregar URL pública de la API y de Swagger/OpenAPI, si se despliegan. -->
 
-Un gestor de tareas tradicional almacena pendientes, pero deja al usuario el
-trabajo de interpretar actividades escritas informalmente, dividir tareas
-grandes, decidir prioridades, detectar días sobrecargados y elegir qué mover de
-fecha.
+El frontend está desplegado en Vercel, la API FastAPI en Render y PostgreSQL en Neon. Faltan por incorporar a este documento las URLs públicas. No hay una captura o GIF versionados en el repositorio. Para desarrollo local, Docker Compose expone el frontend en `http://localhost:8080` y Swagger en `http://localhost:8001/docs`.
 
-Este proyecto utiliza IA como apoyo para esas decisiones, no como un agente con
-control directo sobre los datos. Por ejemplo:
+## El problema y la solución
 
-```text
-"El viernes debo preparar la presentación y enviar el informe a Ana"
-                              |
-                              v
-propuestas estructuradas de tareas + fechas sugeridas + prioridades
-```
+Un gestor de tareas convencional permite guardar pendientes, pero no ayuda a convertir notas informales en un plan accionable, dividir trabajo amplio, decidir qué atender primero ni detectar días con demasiadas entregas.
 
-Las propuestas se devuelven al cliente para que el usuario las revise. No se
-guardan hasta que se envían al endpoint de confirmación correspondiente.
+Este proyecto combina una interfaz web React con una API REST en FastAPI para gestionar tareas y subtareas. La IA puede interpretar texto libre, generar propuestas, recomendar un plan diario, explicar sobrecargas y sugerir reprogramaciones.
 
-## Flujo principal de IA
+El diferenciador es el límite de responsabilidad: **la IA propone, el usuario confirma y el backend persiste**. Una respuesta de un proveedor LLM se trata como dato no confiable; se valida y nunca escribe directamente en PostgreSQL. Las propuestas de creación y de cambio de fechas pasan por una acción explícita de confirmación.
 
-```text
-Lenguaje natural / tareas existentes
-              |
-              v
-      ProveedorIAInterface
-              |
-              v
-      Respuesta estructurada
-              |
-              v
-      Validación con Pydantic
-              |
-              v
-   Reglas de negocio del backend
-              |
-              v
-   Confirmación del usuario
-              |
-              v
-         PostgreSQL
-```
+## Características principales
 
-Los endpoints de análisis pueden terminar antes de PostgreSQL porque solo
-generan una respuesta. El último tramo del flujo ocurre exclusivamente en los
-endpoints de confirmación.
+- Registro, inicio y cierre de sesión, restauración de sesión mediante `/auth/me` y rutas protegidas.
+- CRUD de tareas con estado, fecha límite y prioridad; gestión de subtareas mediante una relación padre-hija.
+- Panel web para transformar lenguaje natural en tareas propuestas y confirmar sólo las seleccionadas.
+- Descomposición asistida de una tarea amplia en subtareas, con revisión humana antes de guardarlas.
+- Plan diario y recomendaciones priorizadas a partir de las tareas pendientes, sin modificar datos.
+- Detección de carga de trabajo por fechas y propuestas de reprogramación que muestran fecha actual, fecha sugerida y motivo antes de confirmarse.
+- Prevención de confirmaciones de reprogramación desactualizadas: el backend compara la fecha actual con la fecha usada en la propuesta.
+- Manejo consistente de errores de API y proveedor IA, estados de carga, listas vacías, diálogos de confirmación y navegación responsive.
 
-## Highlights técnicos
+## Stack tecnológico
 
-- **Arquitectura por capas.** FastAPI separa routers HTTP, services con reglas
-  de negocio y repositories para persistencia, evitando que los endpoints
-  concentren lógica de dominio.
-- **Persistencia versionada.** SQLAlchemy trabaja sobre PostgreSQL y Alembic
-  mantiene el historial de cambios de esquema, incluidas fechas, prioridades y
-  jerarquía de tareas.
-- **Autenticación y aislamiento.** JWT identifica al usuario actual y cada
-  operación de tareas se limita a sus propios datos.
-- **Proveedor LLM desacoplado.** Los servicios dependen de
-  `ProveedorIAInterface`, por lo que la misma lógica puede ejecutarse con
-  `ProveedorOllama` o con `ProveedorIAFalso` determinista.
-- **Salida del LLM como entrada no confiable.** Las respuestas del modelo se
-  validan con esquemas Pydantic antes de ingresar a las reglas de negocio.
-- **Reglas deterministas antes que inferencias.** El backend interpreta y
-  valida fechas, prioridades y referencias permitidas cuando corresponde; el
-  modelo no puede inventar identificadores de tareas válidos.
-- **Human-in-the-loop.** La IA propone; los endpoints de confirmación son los
-  únicos que crean tareas o aplican reprogramaciones.
-- **Calidad automatizada.** Hay pruebas unitarias, de API e integración, y
-  GitHub Actions ejecuta migraciones y la suite completa en cada cambio.
+| Área | Tecnologías y uso |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite, React Router, Axios y TanStack Query para la aplicación web y el estado remoto. |
+| Formularios y UI | React Hook Form, Zod, Tailwind CSS y Lucide React. |
+| Backend | Python 3.14, FastAPI y Pydantic para la API y sus contratos. |
+| Datos | PostgreSQL, SQLAlchemy 2 y Alembic para persistencia relacional y migraciones. |
+| IA | `ProveedorIAInterface` con implementaciones para proveedor falso determinista, Ollama (`llama3.2:3b`) y Groq. |
+| Seguridad | JWT con `python-jose` y hashing de contraseñas Argon2 mediante `pwdlib`. |
+| Calidad | pytest, httpx, Vitest, React Testing Library, oxlint y GitHub Actions. |
+| Contenedores | Docker, Docker Compose, imágenes de Python/Node/Nginx y PostgreSQL 17 en Compose. |
 
 ## Arquitectura
 
-```text
-Cliente / Swagger
-       |
-       v
-FastAPI (routers, JWT y validación de entrada)
-       |
-       v
-Services ---------------> ProveedorIAInterface
-       |                         |-- ProveedorOllama
-       v                         `-- ProveedorIAFalso
-Repository
-       |
-       v
-PostgreSQL
+```mermaid
+flowchart LR
+    U[Usuario] --> FE[React + TypeScript]
+    FE -->|REST/JSON + Bearer JWT| API[FastAPI routers]
+    API --> V[Pydantic y autenticación]
+    V --> S[Services]
+    S --> R[Repositories]
+    R --> ORM[SQLAlchemy]
+    ORM --> DB[(PostgreSQL)]
+    S --> I[ProveedorIAInterface]
+    I --> F[Proveedor falso]
+    I --> O[Ollama]
+    I --> G[Groq]
 ```
 
-| Componente | Responsabilidad |
+El frontend usa un cliente Axios centralizado, adjunta el JWT cuando existe sesión y consume únicamente la API pública. Los routers FastAPI reciben la petición, resuelven al usuario autenticado y delegan la regla de negocio a los servicios. Los repositorios encapsulan el acceso de SQLAlchemy a PostgreSQL.
+
+Los servicios de IA dependen de una interfaz, no de un proveedor concreto. Las propuestas se validan con modelos Pydantic y con reglas deterministas —por ejemplo, IDs permitidos, orden y contexto de tareas— antes de devolverse. Dentro de los flujos derivados de IA, sólo los endpoints de confirmación llegan a los servicios y repositorios que persisten tareas o fechas.
+
+### Flujo de una propuesta persistible
+
+```text
+Usuario escribe una petición
+        ↓
+React → POST /ia/planificar (o /ia/proponer-reprogramacion)
+        ↓
+FastAPI autentica, valida y coordina el servicio
+        ↓
+Proveedor IA devuelve datos estructurados
+        ↓
+Pydantic + reglas de negocio verifican la respuesta
+        ↓
+React muestra una propuesta pendiente; el usuario elige qué confirmar
+        ↓
+POST /ia/propuestas/confirmar o /ia/reprogramaciones/confirmar
+        ↓
+Service → Repository → PostgreSQL
+```
+
+Las rutas de análisis terminan antes de la persistencia. En particular, una reprogramación sólo se aplica si la fecha almacenada todavía coincide con la fecha incluida en la propuesta; si no coincide, la API responde con `409 Conflict`.
+
+## Estructura del proyecto
+
+```text
+.
+├── frontend/
+│   ├── src/
+│   │   ├── api/          # Cliente Axios y llamadas a la API
+│   │   ├── components/   # Componentes comunes, de tareas e IA
+│   │   ├── hooks/        # Autenticación, tareas y mutaciones IA
+│   │   ├── pages/        # Pantallas y flujos de usuario
+│   │   ├── routes/       # Rutas públicas y protegidas
+│   │   ├── schemas/      # Validación de formularios con Zod
+│   │   └── types/        # Contratos TypeScript de la API
+│   ├── Dockerfile
+│   └── vercel.json       # Rewrite para SPA; no acredita un despliegue activo
+├── backend/
+│   ├── api/              # App FastAPI, dependencias y routers
+│   ├── ai/               # Interfaz y proveedores IA
+│   ├── services/         # Reglas de negocio y coordinación
+│   ├── repository/       # Abstracciones y acceso a SQLAlchemy
+│   ├── models/           # Modelos de dominio y persistencia
+│   ├── schemas/          # Contratos Pydantic HTTP/IA
+│   ├── alembic/          # Migraciones versionadas
+│   ├── security/         # JWT y contraseñas
+│   └── tests/            # Pruebas unitarias, API e integración
+├── .github/workflows/    # Validación continua
+├── docker-compose.yaml
+└── .env.example
+```
+
+## Decisiones técnicas
+
+### Frontend y backend independientes
+
+**Necesidad:** la experiencia de usuario debía funcionar sin Swagger y ambos componentes debían poder desarrollarse y desplegarse por separado.
+
+**Decisión:** una SPA React/Vite en `frontend/` consume la API REST FastAPI mediante Axios; la URL se configura con `VITE_API_URL`.
+
+**Por qué:** separa los contratos HTTP de la implementación interna, permite compilar el frontend de manera autónoma y mantiene PostgreSQL inaccesible desde el navegador.
+
+**Trade-off:** se configuran dos entornos y CORS debe declarar explícitamente los orígenes permitidos.
+
+### Backend organizado por capas
+
+**Necesidad:** evitar que routers HTTP acumulen reglas de dominio y consultas SQL.
+
+**Decisión:** los routers delegan en servicios; los servicios usan repositorios; los repositorios encapsulan SQLAlchemy.
+
+**Por qué:** esta separación facilita probar reglas de negocio y sustituir dependencias de infraestructura sin mezclar responsabilidades.
+
+**Trade-off:** añade archivos y dependencias explícitas frente a una implementación concentrada en los endpoints.
+
+### IA desacoplada y con confirmación humana
+
+**Necesidad:** aprovechar LLMs sin otorgarles autoridad sobre datos persistidos.
+
+**Decisión:** los servicios dependen de `ProveedorIAInterface`; se incluyen proveedores falso, Ollama y Groq. Las respuestas se validan y los cambios requieren endpoints de confirmación.
+
+**Por qué:** permite pruebas deterministas, cambia el proveedor mediante configuración y conserva autorización, validación y persistencia en el backend.
+
+**Trade-off:** el usuario debe realizar un paso adicional de revisión y los flujos de propuesta y confirmación son solicitudes distintas deliberadamente.
+
+### JWT de sesión en el cliente
+
+**Necesidad:** proteger la API y conservar la sesión durante el uso de la SPA.
+
+**Decisión:** el token Bearer se almacena en `sessionStorage`; un interceptor lo adjunta y limpia la sesión ante un `401`.
+
+**Por qué:** el token no persiste al cerrar la sesión del navegador y la lógica de autorización queda centralizada en la API.
+
+**Trade-off:** `sessionStorage` sigue siendo accesible desde JavaScript; una evolución de producción requeriría cookies `HttpOnly`/`Secure` y protección CSRF, con cambios coordinados en el backend.
+
+### Esquema versionado y ejecución reproducible
+
+**Necesidad:** levantar el sistema con una base de datos consistente en desarrollo y CI.
+
+**Decisión:** SQLAlchemy modela la persistencia, Alembic versiona el esquema y Docker Compose inicia PostgreSQL, API y frontend.
+
+**Por qué:** las migraciones se aplican antes de la API en Compose y también se validan en GitHub Actions.
+
+**Trade-off:** se deben configurar variables de entorno y mantener una base exclusiva para las pruebas de integración.
+
+## Seguridad
+
+- Las contraseñas se almacenan con hash Argon2; nunca se devuelven en los contratos de respuesta.
+- Los endpoints de tareas e IA resuelven el usuario actual desde el JWT. Las consultas y mutaciones de tareas se filtran por `usuario_id`.
+- El JWT incorpora expiración configurable (`JWT_ACCESS_TOKEN_EXPIRE_MINUTES`; 30 minutos por defecto) y usa algoritmo configurable, `HS256` por defecto.
+- Pydantic valida entradas HTTP; los esquemas de tareas rechazan campos extra y restringen, entre otros datos, nombre, prioridad e identificadores.
+- Las respuestas de IA se vuelven a validar y se comprueban contra el contexto permitido. Errores de respuesta inválida y de proveedor se exponen como errores controlados (`502` y `503`).
+- Los secretos, URLs de base de datos y configuración de proveedores viven en `.env`; los archivos `.env` están ignorados por Git. La plantilla `.env.example` no contiene credenciales reales.
+- CORS usa `CORS_ORIGINS` como lista explícita y permite las cabeceras/métodos necesarios para JWT; no se configura el comodín `*` junto con credenciales.
+
+## Base de datos
+
+PostgreSQL es la base de datos relacional. SQLAlchemy mapea las entidades y Alembic registra los cambios de esquema: creación de tareas, usuarios, datos de planificación y jerarquía de subtareas.
+
+```mermaid
+erDiagram
+    USUARIOS ||--o{ TAREAS : posee
+    TAREAS o|--o{ TAREAS : padre_de
+
+    USUARIOS {
+        int id PK
+        string email UK
+        string password_hash
+    }
+    TAREAS {
+        int id PK
+        int usuario_id FK
+        int tarea_padre_id FK
+        string nombre
+        boolean completada
+        date fecha_limite
+        string prioridad
+    }
+```
+
+Una tarea pertenece a un usuario y puede referenciar opcionalmente a otra tarea como padre. La prioridad está restringida a `baja`, `media` o `alta` en el modelo y la base de datos.
+
+## API REST
+
+FastAPI publica contratos interactivos en `/docs` cuando la API está en ejecución.
+
+| Grupo | Propósito |
 | --- | --- |
-| Routers | Exponen la API HTTP, reciben dependencias y devuelven contratos de respuesta. |
-| Services | Aplican reglas de negocio, validan contexto y coordinan repositories o proveedores IA. |
-| Repositories | Encapsulan el acceso a SQLAlchemy y PostgreSQL. |
-| Proveedores IA | Generan propuestas estructuradas sin persistir datos. |
+| `/health` | Comprobación simple de disponibilidad de la API. |
+| `/auth` | Registro, inicio de sesión y consulta del usuario autenticado. |
+| `/tareas` | CRUD de tareas y rutas anidadas para subtareas. |
+| `/ia/planificar`, `/ia/descomponer` | Generación de propuestas sin persistencia directa. |
+| `/ia/recomendar-tareas`, `/ia/plan-dia` | Priorización y planificación de tareas existentes sin cambios. |
+| `/ia/detectar-sobrecarga`, `/ia/proponer-reprogramacion` | Análisis de carga y propuestas de nuevas fechas. |
+| `/ia/propuestas/confirmar`, `/ia/reprogramaciones/confirmar` | Únicas rutas IA que crean tareas o aplican fechas tras confirmación. |
 
-## Características funcionales
+## Testing y calidad
 
-- Registro, inicio de sesión y consulta del usuario autenticado.
-- CRUD de tareas con fecha límite, prioridad y estado de completado.
-- Creación y gestión de subtareas asociadas a una tarea padre.
-- Propuestas de tareas desde texto libre con fechas y prioridades sugeridas.
-- Descomposición de tareas grandes en subtareas propuestas.
-- Recomendación de tareas pendientes y planificación del día.
-- Detección de sobrecarga según cantidad de tareas por fecha.
-- Propuestas de reprogramación y protección frente a una propuesta
-  desactualizada.
-- Confirmación selectiva de propuestas antes de crear tareas o modificar fechas.
+El backend tiene pruebas unitarias para servicios, seguridad, interpretación temporal y proveedores; pruebas de API para autenticación, CORS, tareas y flujos IA; y pruebas de integración con los repositorios de PostgreSQL.
 
-## Tecnologías
+El frontend usa Vitest y React Testing Library para cubrir la protección de rutas, ciclo de sesión, formularios, diálogo de confirmación, planner y navegación móvil. Las validaciones de calidad incluyen `oxlint` y compilación de TypeScript/Vite.
 
-- Python 3.14
-- FastAPI y Pydantic
-- SQLAlchemy 2 y PostgreSQL
-- Alembic
-- JWT con `python-jose` y hash de contraseñas con Argon2
-- Ollama con `llama3.2:3b` (opcional)
-- pytest, httpx y GitHub Actions
-- Docker y Docker Compose
+El workflow de GitHub Actions se ejecuta en cada `push` y `pull request`:
 
-## Flujo de uso
+1. Para el backend, crea un servicio PostgreSQL, instala Python 3.14, ejecuta `alembic upgrade head`, `alembic check` y `pytest`.
+2. Para el frontend, instala Node.js 24, ejecuta `npm ci`, `npm run lint`, `npm run build` y `npm test`.
 
-1. Registra un usuario mediante `POST /auth/registro`.
-2. Inicia sesión en `POST /auth/login` y copia el `access_token`.
-3. En Swagger, pulsa **Authorize** e introduce `Bearer <access_token>`.
-4. Crea tareas con `POST /tareas` o describe actividades en `POST /ia/planificar`.
-5. Revisa las propuestas de IA y confirma solo las que quieras persistir.
+No se publica una métrica de cobertura en el repositorio.
 
-```text
-POST /ia/planificar
-        |
-        v
-propuestas de tareas (no se guardan)
-        |
-        v
-POST /ia/propuestas/confirmar
-        |
-        v
-tareas creadas en PostgreSQL
+## Despliegue y contenedores
+
+### Arquitectura de producción
+
+```mermaid
+flowchart LR
+    U[Usuario] --> V[Vercel]
+    V --> F[Frontend React]
+    F -->|HTTPS / REST| R[Render]
+    R --> A[FastAPI]
+    A --> N[(Neon PostgreSQL)]
 ```
 
-La reprogramación sigue el mismo principio:
+El frontend React se publica en Vercel, la API FastAPI se ejecuta en Render y la persistencia se aloja en Neon. La configuración de cada entorno debe suministrar sus URLs, secretos JWT, orígenes CORS y credenciales de base de datos mediante variables de entorno.
 
-```text
-POST /ia/proponer-reprogramacion
-        |
-        v
-propuestas de nuevas fechas (no se aplican)
-        |
-        v
-POST /ia/reprogramaciones/confirmar
-        |
-        v
-fechas actualizadas en PostgreSQL
+### Entorno local con Docker Compose
+
+El repositorio contiene una configuración local reproducible con Docker Compose:
+
+```mermaid
+flowchart LR
+    B[Navegador :8080] --> F[Frontend Nginx]
+    F -->|REST :8001| A[FastAPI]
+    A --> D[(PostgreSQL)]
 ```
 
-## Endpoints principales
+- El frontend se compila en una imagen Node y se sirve desde Nginx.
+- La API se construye desde su Dockerfile, espera el healthcheck de PostgreSQL y ejecuta las migraciones antes de iniciar Uvicorn.
+- PostgreSQL usa un volumen nombrado (`postgres_data`) para preservar los datos al ejecutar `docker compose down`.
+- Compose selecciona por defecto el proveedor IA falso mediante `DOCKER_IA_PROVIDER`, con lo que el entorno local no depende de una LLM externa.
 
-Todos los endpoints de tareas e IA requieren un token JWT, salvo registro e
-inicio de sesión.
+El repositorio también incluye `frontend/vercel.json`, que configura el rewrite de la SPA para Vercel.
 
-| Área | Endpoints | Acción |
-| --- | --- | --- |
-| Autenticación | `POST /auth/registro`, `POST /auth/login`, `GET /auth/me` | Crea cuentas, emite JWT y consulta el usuario actual. |
-| Tareas | `GET, POST /tareas`, `GET, PUT, PATCH, DELETE /tareas/{id}` | CRUD de tareas propias. |
-| Subtareas | `GET, POST /tareas/{id}/subtareas`, `GET, PUT, PATCH, DELETE /tareas/{id}/subtareas/{subtarea_id}` | Gestiona tareas hijas del padre indicado. |
-| Propuestas desde texto | `POST /ia/planificar` | Propone tareas, fechas y prioridades; no persiste nada. |
-| Descomposición | `POST /ia/descomponer` | Propone subtareas a partir de una tarea grande; no persiste nada. |
-| Recomendación | `POST /ia/recomendar-tareas`, `POST /ia/plan-dia` | Prioriza tareas existentes y arma un plan diario; solo lectura. |
-| Carga de trabajo | `POST /ia/detectar-sobrecarga` | Detecta concentración de tareas por día; solo lectura. |
-| Reprogramación | `POST /ia/proponer-reprogramacion` | Sugiere movimientos de fecha; no modifica tareas. |
-| Confirmaciones | `POST /ia/propuestas/confirmar`, `POST /ia/reprogramaciones/confirmar` | Crea tareas confirmadas o actualiza fechas confirmadas. |
-
-Consulta contratos, ejemplos y códigos de respuesta en la documentación
-interactiva de FastAPI: `/docs`.
-
-## Seguridad y reglas de IA
-
-- Las contraseñas se almacenan mediante hash Argon2.
-- Cada solicitud protegida obtiene el usuario desde el JWT y solo opera sobre
-  sus propios datos.
-- Las entradas HTTP y las salidas de IA se validan con Pydantic.
-- El contexto que llega al modelo está acotado y ordenado de forma
-  determinista; las respuestas también tienen máximos compatibles con los
-  flujos de confirmación.
-- CORS acepta únicamente los orígenes configurados en `CORS_ORIGINS`; no se
-  habilita el comodín `*` junto con credenciales JWT.
-- Ollama no se considera una fuente confiable: una respuesta mal estructurada
-  se rechaza antes de usarse y devuelve un error controlado.
-- Los fallos de proveedor y las respuestas inválidas se registran sin incluir
-  prompts, tokens ni contenido crudo generado por el modelo.
-- Las reglas deterministas del backend tienen prioridad sobre la sugerencia del
-  modelo cuando deben calcularse o validarse fechas, prioridades o relaciones
-  con tareas existentes.
-- La IA no puede persistir cambios directamente. Solo
-  `/ia/propuestas/confirmar` y `/ia/reprogramaciones/confirmar` aplican cambios
-  derivados de una propuesta, tras una acción explícita del usuario.
-
-## Instalación local
+## Instalación y ejecución local
 
 ### Requisitos
 
-- Python 3.14.
-- PostgreSQL disponible localmente.
 - Git.
-- Ollama únicamente si se desea usar el proveedor LLM real.
+- Python 3.14.
+- Node.js 24 para reproducir la versión de CI.
+- PostgreSQL accesible para ejecución nativa, o Docker y Docker Compose para la alternativa contenida.
+- Ollama sólo para usar el proveedor local real; el proveedor `falso` permite usar y probar los flujos sin LLM.
 
-### Entorno y dependencias
+### Inicio rápido con Docker
 
 ```bash
 git clone https://github.com/Ricardoxx07/Gesti-n-de-tareas-IA.git
 cd Gesti-n-de-tareas-IA
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+```
+
+Edita el `.env` de la raíz. Como mínimo, define credenciales seguras de PostgreSQL, `DATABASE_URL`, `TEST_DATABASE_URL`, `JWT_SECRET_KEY` y el proveedor IA. Conserva `TEST_DATABASE_URL` para una base de datos exclusiva de pruebas. Si usarás Docker Compose, incluye `http://localhost:8080` y `http://127.0.0.1:8080` en `CORS_ORIGINS`, además del origen de Vite.
+
+En `frontend/.env`, configura la URL de la API para desarrollo local:
+
+```env
+VITE_API_URL=http://localhost:8001
+```
+
+Variables relevantes de la raíz:
+
+| Variable | Uso |
+| --- | --- |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Credenciales y nombre de la base local/contenida. |
+| `DATABASE_URL` | Conexión de la API y Alembic. |
+| `TEST_DATABASE_URL` | Conexión aislada de pruebas de integración. |
+| `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Firma y vigencia de tokens. |
+| `IA_PROVIDER` | `falso`, `ollama` o `groq`. |
+| `OLLAMA_*` / `GROQ_*` | Modelo, URL/clave, timeout y límite de tokens del proveedor elegido. |
+| `CORS_ORIGINS` | Orígenes de frontend permitidos, separados por comas. |
+
+Con las variables configuradas, inicia el entorno:
+
+```bash
+docker compose up --build
+```
+
+Servicios disponibles:
+
+- Frontend: `http://localhost:8080`
+- API: `http://localhost:8001`
+- Swagger/OpenAPI: `http://localhost:8001/docs`
+
+En otra terminal puedes comprobar el estado:
+
+```bash
+docker compose ps
+docker compose logs api --tail=100
+```
+
+Para detener el entorno y conservar el volumen de PostgreSQL:
+
+```bash
+docker compose down
+```
+
+> Compose usa `DOCKER_IA_PROVIDER=falso` si no se define. Para elegir otro proveedor en Compose, define `DOCKER_IA_PROVIDER` y las variables del proveedor correspondiente; para Ollama local, la ejecución nativa del backend es la opción documentada más directa.
+
+<details>
+<summary><strong>Ejecución nativa y proveedores IA</strong></summary>
+
+<br>
+
+Prepara dos bases de datos PostgreSQL: una para la aplicación indicada por `DATABASE_URL` y otra exclusiva para pruebas indicada por `TEST_DATABASE_URL`.
+
+**Backend**
+
+```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r backend/requirements.txt
-```
-
-En Windows, activa el entorno con:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-### Variables de entorno
-
-Copia la plantilla:
-
-```bash
-cp .env.example .env
-```
-
-Edita `.env` con las credenciales de tu PostgreSQL local. La plantilla contiene
-las variables requeridas por la aplicación:
-
-| Variable | Propósito |
-| --- | --- |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Datos de la instancia PostgreSQL local. |
-| `DATABASE_URL` | Cadena de conexión de la API y Alembic. |
-| `DATABASE_URL_DOCKER` | Cadena de conexión prevista para el contenedor de API. |
-| `TEST_DATABASE_URL` | Base de datos aislada para las pruebas de integración. |
-| `JWT_SECRET_KEY` | Clave de firma de los tokens; debe ser larga, aleatoria y privada. |
-| `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Configuración de los JWT. |
-| `IA_PROVIDER` | `falso`, `ollama` o `groq`. |
-| `OLLAMA_MODEL`, `OLLAMA_URL`, `OLLAMA_TIMEOUT_SECONDS`, `OLLAMA_MAX_TOKENS` | Configuración del proveedor Ollama. |
-| `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_TIMEOUT_SECONDS`, `GROQ_MAX_TOKENS` | Configuración del proveedor Groq. La clave es obligatoria al seleccionar `IA_PROVIDER=groq`. |
-| `CORS_ORIGINS` | Orígenes de frontend permitidos, separados por comas. |
-
-`.env` y `.env.test` están ignorados por Git. No subas credenciales reales al
-repositorio. El backend localiza el único archivo `.env` de la raíz del
-repositorio automáticamente.
-
-### Base de datos y migraciones
-
-Crea dos bases de datos vacías en PostgreSQL: una para la aplicación
-(`gestor_tareas`, por ejemplo) y otra para pruebas (`gestor_tareas_test`). Sus
-URLs deben coincidir con `DATABASE_URL` y `TEST_DATABASE_URL`.
-
-Aplica las migraciones:
-
-```bash
 cd backend
 alembic upgrade head
+uvicorn api.main:app --reload --port 8001
 ```
 
-Para comprobar la versión aplicada:
+En Windows, activa el entorno con `.venv\Scripts\Activate.ps1`.
+
+**Frontend**
+
+En otra terminal, desde la raíz del repositorio:
 
 ```bash
-cd backend
-alembic current
+cd frontend
+npm ci
+npm run dev
 ```
 
-### Ejecutar la API
+Vite mostrará la URL de desarrollo, habitualmente `http://localhost:5173`.
 
-```bash
-cd backend
-uvicorn api.main:app --reload
-```
+#### Proveedores IA
 
-La API queda disponible en `http://127.0.0.1:8000` y Swagger en
-`http://127.0.0.1:8000/docs`.
-
-### Usar Ollama localmente
-
-El proyecto funciona sin un LLM real con el proveedor falso:
+La opción segura para desarrollo y pruebas es:
 
 ```env
 IA_PROVIDER=falso
 ```
 
-Ese proveedor sirve para comprobar rutas y flujos, pero devuelve respuestas
-deterministas: no interpreta lenguaje natural como un modelo real.
-
-Para usar Ollama y el modelo configurado por defecto:
+Para ejecutar Ollama localmente con la configuración por defecto:
 
 ```bash
 ollama pull llama3.2:3b
 ollama serve
 ```
 
-En otra terminal, configura `.env`:
+Después configura `IA_PROVIDER=ollama` y reinicia Uvicorn. Para Groq, selecciona `IA_PROVIDER=groq` y define `GROQ_API_KEY`; no publiques esa clave.
 
-```env
-IA_PROVIDER=ollama
-OLLAMA_MODEL=llama3.2:3b
-OLLAMA_URL=http://localhost:11434
-```
+</details>
 
-Reinicia Uvicorn después de cambiar variables de entorno. Si Ollama está
-instalado como servicio, normalmente no será necesario ejecutar `ollama serve`
-manualmente.
+### Verificación
 
-### Usar Groq
-
-Configura una sola selección de proveedor en `.env` y proporciona una clave
-válida de Groq:
-
-```env
-IA_PROVIDER=groq
-GROQ_API_KEY=tu_clave_de_groq
-GROQ_MODEL=openai/gpt-oss-20b
-GROQ_TIMEOUT_SECONDS=30
-GROQ_MAX_TOKENS=900
-```
-
-Reinicia Uvicorn para que cargue la configuración. Los endpoints de IA usarán
-Groq; el proveedor solo genera propuestas y la persistencia sigue requiriendo
-la confirmación explícita del usuario.
-
-## Pruebas y CI
-
-Ejecuta toda la suite con la base de pruebas configurada:
+**Backend**
 
 ```bash
 cd backend
 python -m pytest -q
 ```
 
-En cada `push` y `pull request`, GitHub Actions:
+> Las pruebas crean y eliminan tablas en `TEST_DATABASE_URL`. No apuntes esta variable a una base con información que quieras conservar.
 
-1. instala las dependencias;
-2. inicia PostgreSQL;
-3. aplica las migraciones con Alembic;
-4. verifica la sincronización del esquema mediante `alembic check`;
-5. ejecuta la suite completa con pytest.
-
-## Docker
-
-El repositorio incluye una ejecución reproducible con Docker Compose para la API
-y PostgreSQL. Ejecuta los siguientes comandos desde la raíz del repositorio. Al
-iniciar, Compose espera el healthcheck de PostgreSQL, aplica las migraciones de
-Alembic y luego inicia Uvicorn.
-
-Con `.env` configurado como se indica arriba, ejecuta:
+**Frontend**
 
 ```bash
-docker compose up --build -d
-docker compose ps
-docker compose logs api --tail=100
-curl http://127.0.0.1:8000/
+cd frontend
+npm run lint
+npm run build
+npm test
 ```
 
-Ambos servicios deben aparecer como `healthy`. Para comprobar la revisión de
-base de datos desde el contenedor:
+## 🧩 Retos técnicos abordados
 
-```bash
-docker compose exec api alembic current
-```
+### Integrar IA sin delegar la autoridad de los datos
 
-Por defecto, Compose usa `IA_PROVIDER=falso` dentro de la API para que el
-entorno contenerizado no dependa de una instancia de Ollama fuera de Docker. La
-integración real con Ollama sigue disponible mediante la ejecución local.
+**Problema:** una respuesta LLM puede ser incompleta, malformada o sugerir identificadores fuera del contexto del usuario.
 
-Para detener los contenedores preservando los datos del volumen PostgreSQL:
+**Solución:** la interfaz de proveedor mantiene el modelo separado de routers y servicios; Pydantic y los servicios validan estructura, IDs, orden y reglas de negocio. Las rutas de análisis no persisten y las rutas de confirmación son explícitas.
 
-```bash
-docker compose down
-```
+**Resultado:** la aplicación puede cambiar entre proveedor falso, Ollama y Groq sin permitir acceso directo del modelo a PostgreSQL.
 
-No uses `docker compose down -v` salvo que quieras eliminar explícitamente la
-base de datos local creada por Docker.
+### Evitar que una reprogramación obsoleta sobrescriba cambios recientes
 
-## Estado del proyecto
+**Problema:** entre generar una propuesta y aceptarla, la fecha límite de una tarea puede haber cambiado.
 
-Este repositorio representa un MVP backend orientado a portafolio. Las siguientes
-etapas previstas son consolidar la ejecución reproducible con Docker Compose,
-desplegar una demo pública y evaluar una interfaz web como complemento de la
-API.
+**Solución:** la confirmación recibe la fecha original y el servicio la compara con el valor persistido antes de actualizar.
+
+**Resultado:** un conflicto devuelve `409` en lugar de aplicar una propuesta ya desactualizada.
+
+### Sincronizar autenticación y estado remoto en una SPA
+
+**Problema:** las rutas privadas necesitan validar una sesión restaurada y los cambios persistentes deben reflejarse en la interfaz sin duplicar datos.
+
+**Solución:** `AuthProvider` consulta `/auth/me`; Axios centraliza el token y la gestión de `401`; TanStack Query invalida o actualiza las consultas de tareas tras mutaciones.
+
+**Resultado:** la interfaz redirige ante una sesión inválida y vuelve a consultar el estado del servidor después de crear, editar, confirmar o reprogramar tareas.
+
+## Logros técnicos demostrables
+
+- Aplicación full-stack desplegada: React en Vercel, FastAPI en Render y PostgreSQL en Neon.
+- API REST autenticada, con aislamiento por usuario, migraciones relacionales y flujos completos de tareas, subtareas y planificación.
+- Integración de IA intercambiable y controlada: las propuestas se validan y requieren confirmación humana antes de persistir.
+- Pruebas, lint y compilación automatizados para frontend y backend; ejecución local reproducible con Docker Compose.
+
+## 📚 Aprendizajes aplicados
+
+- Arquitectura por capas, contratos Pydantic e integración de proveedores IA sin ceder reglas de negocio al modelo.
+- Estado remoto, rutas protegidas y formularios validados en React/TypeScript.
+- Modelado relacional, migraciones, JWT/Argon2, CORS y automatización de pruebas y builds.
+
+## Posibles mejoras futuras
+
+- Añadir una captura o GIF corto del flujo principal en este README.
+- Evolucionar a sesiones con cookies `HttpOnly`/`Secure` y protección CSRF mediante cambios compatibles en el backend.
+- Incorporar observabilidad de aplicación y proveedor IA, manteniendo fuera de los logs datos sensibles y respuestas crudas.
+
+## Estado
+
+✅ Proyecto finalizado y desplegado en producción: frontend en Vercel, API FastAPI en Render y PostgreSQL en Neon. El repositorio también incluye pruebas, CI y una ejecución local reproducible con Docker Compose.
+
+## Autor
+
+[Ricardoxx07](https://github.com/Ricardoxx07)
+
+## Licencia
+
+<!-- TODO: definir y agregar una licencia para el proyecto. -->
